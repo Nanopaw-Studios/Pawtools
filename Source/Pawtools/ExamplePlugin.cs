@@ -19,11 +19,11 @@ namespace Pawtools
                 Author = "Nanopaw Studios",
                 AuthorUrl = null,
                 HomepageUrl = null,
-                RepositoryUrl = "https://github.com/FlaxEngine/Pawtools",
-                Description = "This is an example plugin project.",
+                RepositoryUrl = "https://github.com/Nanopaw-Studios/Pawtools",
+                Description = "an in-house toolkit for the flax game engine.",
                 Version = new Version(0, 0, 1),
                 IsAlpha = false,
-                IsBeta = false,
+                IsBeta = true,
             };
         }
 
@@ -32,7 +32,7 @@ namespace Pawtools
         {
             base.Initialize();
 
-            Debug.Log("Hello from plugin code!");
+            Debug.Log("Pawtools Initalized, ready to use.");
         }
 
         /// <inheritdoc />
@@ -40,6 +40,7 @@ namespace Pawtools
         {
             // Use it to cleanup data
 
+            Debug.Log("Pawtools is being deinitalized.");
             base.Deinitialize();
         }
     }

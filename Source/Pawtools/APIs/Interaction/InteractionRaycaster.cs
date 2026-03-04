@@ -1,47 +1,74 @@
 using FlaxEngine;
+using FlaxEngine.GUI;
 
 namespace Pawtools;
 
-/// <summary>
-/// The raycaster for interactions
-/// </summary>
 public class InteractionRaycaster : Script
 {
-    /// <summary>
-    /// The max distance in units
-    /// </summary>
     public float MaxDistance = 500f;
+    
+    private Label _interactLabel;
+    private Actor _interactContainer;
 
-    /// <inheritdoc/>
-    public override void OnUpdate()
+    public override void OnStart()
     {
-        if (Input.GetKeyDown(KeyboardKeys.E))
+        // 1. Find the top-level Canvas
+        var canvas = Scene.FindActor("UICanvas");
+        if (canvas != null)
         {
-            PerformRaycast();
-        }
-    }
-
-    private void PerformRaycast()
-    {
-        // 1. Convert mouse position to a 3D ray from the camera
-        Ray ray = Camera.MainCamera.ConvertMouseToRay(new Float2(Screen.Size.X / 2, Screen.Size.Y / 2));
-
-        // 3. Cast the ray with the mask
-        if (Physics.RayCast(ray.Position, ray.Direction, out RayCastHit hit, MaxDistance))
-        {
-            // Draw a GREEN line to the hit point for 2 seconds
-            DebugDraw.DrawLine(ray.Position, hit.Point, Color.Green, 2f);
-
-            var interactable = hit.Collider.GetScript<Interactable>();
-            if (interactable != null)
+            // 2. Find the 'Interact' container Actor
+            _interactContainer = canvas.GetChild("Interact");
+            if (_interactContainer != null)
             {
-                interactable.OnInteract();
+                // 3. Find the 'Label' Actor
+                var labelActor = _interactContainer.GetChild("Label");
+                if (labelActor != null)
+                {
+                    // 4. In Flax, UI elements live inside a UIControl script
+                    var uiControl = labelActor as UIControl;
+                    if (uiControl != null)
+                    {
+                        _interactLabel = uiControl.Control as Label;
+                    }
+                }
             }
         }
-        else
+        
+        // Hide UI by default
+        if (_interactContainer != null) _interactContainer.IsActive = false;
+    }
+
+    public override void OnUpdate()
+    {
+        Ray ray = Camera.MainCamera.ConvertMouseToRay(Screen.Size * 0.5f);
+        bool hitInteractable = false;
+
+        if (Physics.RayCast(ray.Position, ray.Direction, out RayCastHit hit, MaxDistance))
         {
-            // Draw a RED line representing the full miss distance for 2 seconds
-            DebugDraw.DrawLine(ray.Position, ray.Position + ray.Direction * MaxDistance, Color.Red, 2f);
+            var interactable = hit.Collider.GetScript<Interactable>();
+            
+            if (interactable != null)
+            {
+                hitInteractable = true;
+                UpdateUI(interactable);
+
+                if (Input.GetKeyDown(interactable.InteractionKey))
+                {
+                    interactable.OnInteract();
+                }
+            }
+        }
+
+        // Toggle UI visibility based on hit status
+        if (_interactContainer != null && _interactContainer.IsActive != hitInteractable)
+            _interactContainer.IsActive = hitInteractable;
+    }
+
+    private void UpdateUI(Interactable interactable)
+    {
+        if (_interactLabel != null)
+        {
+            _interactLabel.Text = $"Press {interactable.InteractionKey} to {interactable.InteractionSuffix}";
         }
     }
 }
